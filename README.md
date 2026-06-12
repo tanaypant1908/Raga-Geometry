@@ -2,12 +2,6 @@
 
 > An interactive web application that explores Indian classical ragas through graph theory, set theory, and real-time visualization.
 
-![License](https://img.shields.io/badge/license-MIT-blue)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)
-![HTML5](https://img.shields.io/badge/HTML5-Web-orange)
-![CSS3](https://img.shields.io/badge/CSS3-Styling-blue)
-
----
 
 ## 🌟 Project Overview
 
