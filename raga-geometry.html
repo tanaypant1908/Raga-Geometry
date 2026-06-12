@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Raga Geometry</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0c0c0f;
+    --bg2: #141418;
+    --bg3: #1c1c22;
+    --bg4: #242430;
+    --border: #2e2e3a;
+    --amber: #f0a832;
+    --amber-dim: #a07020;
+    --orange: #e8621a;
+    --coral: #e8956a;
+    --teal: #3bb8ac;
+    --teal-dim: #1e7a72;
+    --blue: #4a9edd;
+    --red: #c84040;
+    --gray: #555568;
+    --gray-light: #8888a8;
+    --text: #e8e8f0;
+    --text-dim: #9090b0;
+    --komal: #7bb8e8;
+    --teevra: #e87b7b;
+    --shuddha: #a8e8b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  #bg-canvas {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0; opacity: 0.12;
+  }
+
+  #app { position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    padding: 20px 40px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-top {
+    display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px;
+  }
+  .site-title {
+    font-family: 'Crimson Pro', serif;
+    font-size: 28px; font-weight: 700;
+    background: linear-gradient(135deg, var(--amber), var(--coral));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .site-sub {
+    font-size: 12px; color: var(--text-dim); letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; }
+  .tab {
+    padding: 10px 24px;
+    background: none; border: none; border-bottom: 3px solid transparent;
+    color: var(--text-dim); font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    letter-spacing: 0.5px; transition: all 0.25s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+
+  /* Views */
+  .view { display: none; padding: 32px 40px; }
+  .view.active { display: flex; gap: 32px; flex-wrap: wrap; }
+  #view-thaat.active { display: block; }
+  #view-compare.active { display: flex; flex-direction: column; gap: 24px; }
+
+  /* Select */
+  select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  select:focus { outline: 1px solid var(--amber); }
+
+  /* LEFT PANEL */
+  .left-panel { width: 280px; flex-shrink: 0; }
+  .right-panel { flex: 1; min-width: 0; }
+
+  /* Metadata Card */
+  .meta-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+  .raga-name-display {
+    font-family: 'Crimson Pro', serif;
+    font-size: 32px; font-weight: 700;
+    color: var(--amber);
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .thaat-badge {
+    display: inline-block;
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; color: var(--text-dim);
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .meta-row {
+    display: flex; justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .meta-row:last-child { border-bottom: none; }
+  .meta-label { color: var(--text-dim); }
+  .meta-value { color: var(--text); font-weight: 500; }
+  .vadi-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); margin-right: 4px; }
+  .samvadi-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--coral); margin-right: 4px; }
+
+  .similarity-bar-wrap { margin-top: 16px; }
+  .similarity-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+  .bar-bg { background: var(--bg4); border-radius: 4px; height: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--teal), var(--amber)); transition: width 0.5s ease; }
+  .sim-pct { font-size: 12px; color: var(--teal); margin-top: 4px; font-weight: 600; }
+
+  /* Note pills */
+  .note-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .note-pill {
+    padding: 2px 7px; border-radius: 12px;
+    font-size: 11px; font-weight: 600;
+    font-family: 'Crimson Pro', serif;
+  }
+  .pill-used { background: rgba(240,168,50,0.15); color: var(--amber); border: 1px solid var(--amber-dim); }
+  .pill-vadi { background: rgba(232,98,26,0.25); color: var(--orange); border: 1px solid var(--orange); }
+  .pill-samvadi { background: rgba(232,149,106,0.25); color: var(--coral); border: 1px solid var(--coral); }
+  .pill-unused { background: var(--bg4); color: var(--gray); border: 1px solid var(--border); }
+
+  /* SVG containers */
+  .viz-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .viz-title {
+    font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  svg text { font-family: 'Inter', sans-serif; }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 1000;
+    max-width: 200px;
+  }
+  #tooltip.show { opacity: 1; }
+  .tt-note { font-family: 'Crimson Pro', serif; font-size: 16px; color: var(--amber); font-weight: 700; }
+  .tt-role { color: var(--text-dim); font-size: 11px; }
+
+  /* Math notes collapsible */
+  .math-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 0;
+  }
+  .math-header {
+    padding: 14px 20px;
+    cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--text-dim);
+    letter-spacing: 1px; text-transform: uppercase;
+    user-select: none;
+  }
+  .math-header:hover { color: var(--text); }
+  .math-body {
+    padding: 0 20px;
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+  }
+  .math-body.open { max-height: 600px; padding: 0 20px 20px; }
+  .math-body p { font-size: 13px; color: var(--text-dim); line-height: 1.7; margin-bottom: 12px; }
+  .math-body strong { color: var(--amber); }
+
+  /* VIEW 2: Compare */
+  .compare-cols { display: flex; gap: 24px; }
+  .compare-col { flex: 1; }
+  .compare-col select { margin-bottom: 12px; }
+  .intersection-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .venn-stats { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+  .venn-stat { flex: 1; min-width: 120px; }
+  .venn-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); }
+  .venn-stat-value { font-size: 24px; font-family: 'Crimson Pro', serif; color: var(--amber); font-weight: 700; }
+  .venn-stat-sub { font-size: 11px; color: var(--text-dim); }
+  .venn-interpretation {
+    margin-top: 16px; padding: 14px 16px;
+    background: var(--bg3); border-radius: 8px;
+    font-size: 13px; color: var(--text-dim); line-height: 1.6;
+    border-left: 3px solid var(--amber);
+  }
+
+  /* VIEW 3: Thaat */
+  .thaat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
+  .thaat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .thaat-card:hover { border-color: var(--amber); }
+  .thaat-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .thaat-card-name { font-family: 'Crimson Pro', serif; font-size: 18px; font-weight: 700; color: var(--amber); }
+  .raga-count-badge {
+    background: var(--bg4); border: 1px solid var(--border);
+    border-radius: 20px; padding: 1px 8px;
+    font-size: 10px; color: var(--text-dim);
+  }
+  .thaat-notes { display: flex; flex-wrap: wrap; gap: 4px; }
+  .thaat-note-pill {
+    padding: 2px 7px; border-radius: 12px;
+    font-family: 'Crimson Pro', serif; font-size: 12px; font-weight: 600;
+  }
+  .tn-shuddha { background: rgba(168,232,184,0.15); color: var(--shuddha); border: 1px solid rgba(168,232,184,0.3); }
+  .tn-komal { background: rgba(123,184,232,0.15); color: var(--komal); border: 1px solid rgba(123,184,232,0.3); }
+  .tn-teevra { background: rgba(232,123,123,0.15); color: var(--teevra); border: 1px solid rgba(232,123,123,0.3); }
+
+  .heatmap-section { }
+  .heatmap-title { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 16px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+  /* Legend */
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  @media (max-width: 1100px) {
+    .thaat-grid { grid-template-columns: repeat(3, 1fr); }
+    .left-panel { width: 240px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="app">
+  <header>
+    <div class="header-top">
+      <span class="site-title">Raga Geometry</span>
+      <span class="site-sub">The mathematics of Hindustani classical music</span>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchView('explorer')">Raga Explorer</button>
+      <button class="tab" onclick="switchView('compare')">Raga Comparison</button>
+      <button class="tab" onclick="switchView('thaat')">Thaat Map</button>
+    </div>
+  </header>
+
+  <!-- VIEW 1: Explorer -->
+  <div id="view-explorer" class="view active">
+    <div class="left-panel">
+      <select id="raga-select" onchange="selectRaga(this.value)">
+        <option value="Yaman">Yaman</option>
+        <option value="Bhairav">Bhairav</option>
+        <option value="Kafi">Kafi</option>
+        <option value="Bhupali">Bhupali</option>
+        <option value="Bhairavi">Bhairavi</option>
+        <option value="Bageshri">Bageshri</option>
+        <option value="Darbari">Darbari</option>
+        <option value="Hamsadhwani">Hamsadhwani</option>
+        <option value="Malkuns">Malkuns</option>
+        <option value="Todi">Todi</option>
+      </select>
+      <div class="meta-card" id="meta-card"></div>
+    </div>
+    <div class="right-panel">
+      <div class="viz-block">
+        <div class="viz-title">Pitch-Class Circle</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Vadi</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--coral)"></div>Samvadi</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Used</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div>Forbidden</div>
+        </div>
+        <svg id="circle-svg" width="100%" viewBox="0 0 500 500"></svg>
+      </div>
+      <div class="viz-block">
+        <div class="viz-title">Directed Note Graph — Aaroh / Avaroh</div>
+        <div class="legend">
+          <div class="legend-item" style="gap:4px"><svg width="24" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="var(--amber)" stroke-width="2" marker-end="url(#ah)"/></svg>Aaroh</div>
+          <div class="legend-item" style="gap:4px"><svg width="24" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="var(--teal)" stroke-width="2" stroke-dasharray="4,3"/></svg>Avaroh</div>
+        </div>
+        <svg id="graph-svg" width="100%" viewBox="0 0 700 220"></svg>
+      </div>
+      <div class="math-section">
+        <div class="math-header" onclick="toggleMath()">
+          <span>Mathematical Notes</span>
+          <span id="math-arrow">▼</span>
+        </div>
+        <div class="math-body" id="math-body">
+          <p><strong>What is a pitch-class set?</strong> In music theory, a pitch-class set is a collection of notes treated without regard to octave. If you play a C on any piano key, it belongs to the same pitch-class. Here we use 12 pitch-classes (the chromatic scale). A raga is a subset of this universe — typically 5 to 7 notes — with additional rules about how to use them.</p>
+          <p><strong>What does Jaccard similarity mean?</strong> Given two sets A and B, Jaccard = |A ∩ B| / |A ∪ B|. It measures overlap. If Yaman uses {S,R,G,m,P,D,N} and Bhupali uses {S,R,G,P,D}, they share {S,R,G,P,D} = 5 notes, and their union has 7 notes. Jaccard = 5/7 ≈ 71%. This is why the two ragas "sound related" — they share most of their pitch vocabulary.</p>
+          <p><strong>Why does vadi centrality make mathematical sense?</strong> In the directed note graph, the vadi (the most important note) tends to have the highest in-degree + out-degree: more phrases begin and end on it. This mirrors graph-theoretic centrality. The vadi is the "hub" of the raga's grammar — its gravitational center in the network of melodic movement.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: Compare -->
+  <div id="view-compare" class="view">
+    <div class="compare-cols">
+      <div class="compare-col">
+        <select id="compare-a" onchange="renderCompare()">
+          <option value="Yaman" selected>Yaman</option>
+          <option value="Bhairav">Bhairav</option>
+          <option value="Kafi">Kafi</option>
+          <option value="Bhupali">Bhupali</option>
+          <option value="Bhairavi">Bhairavi</option>
+          <option value="Bageshri">Bageshri</option>
+          <option value="Darbari">Darbari</option>
+          <option value="Hamsadhwani">Hamsadhwani</option>
+          <option value="Malkuns">Malkuns</option>
+          <option value="Todi">Todi</option>
+        </select>
+        <div class="viz-block">
+          <div class="viz-title">Raga A — Pitch Circle</div>
+          <svg id="circle-a" width="100%" viewBox="0 0 360 360"></svg>
+        </div>
+      </div>
+      <div class="compare-col">
+        <select id="compare-b" onchange="renderCompare()">
+          <option value="Yaman">Yaman</option>
+          <option value="Bhairav">Bhairav</option>
+          <option value="Kafi">Kafi</option>
+          <option value="Bhupali" selected>Bhupali</option>
+          <option value="Bhairavi">Bhairavi</option>
+          <option value="Bageshri">Bageshri</option>
+          <option value="Darbari">Darbari</option>
+          <option value="Hamsadhwani">Hamsadhwani</option>
+          <option value="Malkuns">Malkuns</option>
+          <option value="Todi">Todi</option>
+        </select>
+        <div class="viz-block">
+          <div class="viz-title">Raga B — Pitch Circle</div>
+          <svg id="circle-b" width="100%" viewBox="0 0 360 360"></svg>
+        </div>
+      </div>
+    </div>
+    <div class="intersection-panel">
+      <div class="viz-title">Set Intersection — Venn Diagram</div>
+      <svg id="venn-svg" width="100%" viewBox="0 0 700 220"></svg>
+      <div class="venn-stats" id="venn-stats"></div>
+      <div class="venn-interpretation" id="venn-interp"></div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: Thaat -->
+  <div id="view-thaat" class="view">
+    <div class="thaat-grid" id="thaat-grid"></div>
+    <div class="heatmap-section">
+      <div class="heatmap-title">Thaat Similarity Matrix — Jaccard Index</div>
+      <svg id="heatmap-svg" width="100%" viewBox="0 0 660 660"></svg>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-note" id="tt-note"></div>
+  <div class="tt-role" id="tt-role"></div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const ALL_NOTES = ["S","r","R","g","G","M","m","P","d","D","n","N"];
+
+const RAGAS = {
+  "Yaman":       { thaat:"Kalyan",   notes:["S","R","G","m","P","D","N"], vadi:"G",  samvadi:"N", aaroh:["N","R","G","m","P","D","N"], avaroh:["N","D","P","m","G","R","S"], forbidden:["M"], time:"evening", mood:"romantic" },
+  "Bhairav":     { thaat:"Bhairav",  notes:["S","r","G","M","P","d","N"], vadi:"D",  samvadi:"r", aaroh:["S","r","G","M","P","d","N","S"], avaroh:["S","N","d","P","M","G","r","S"], forbidden:[], time:"morning", mood:"serene" },
+  "Kafi":        { thaat:"Kafi",     notes:["S","R","g","M","P","D","n"], vadi:"G",  samvadi:"N", aaroh:["S","R","g","M","P","D","n","S"], avaroh:["S","n","D","P","M","g","R","S"], forbidden:[], time:"night", mood:"pathos" },
+  "Bhupali":     { thaat:"Kalyan",   notes:["S","R","G","P","D"],         vadi:"G",  samvadi:"D", aaroh:["S","R","G","P","D","S"], avaroh:["S","D","P","G","R","S"], forbidden:["M","m","N","n"], time:"evening", mood:"peaceful" },
+  "Bhairavi":    { thaat:"Bhairavi", notes:["S","r","g","M","P","d","n"], vadi:"M",  samvadi:"S", aaroh:["S","r","g","M","P","d","n","S"], avaroh:["S","n","d","P","M","g","r","S"], forbidden:[], time:"morning", mood:"devotional" },
+  "Bageshri":    { thaat:"Kafi",     notes:["S","R","g","M","D","n"],     vadi:"g",  samvadi:"M", aaroh:["S","g","M","D","n","S"], avaroh:["S","n","D","M","g","R","S"], forbidden:["P"], time:"night", mood:"longing" },
+  "Darbari":     { thaat:"Asavari",  notes:["S","R","g","M","P","d","n"], vadi:"R",  samvadi:"P", aaroh:["S","R","M","P","d","n","S"], avaroh:["S","n","d","P","M","g","R","S"], forbidden:[], time:"night", mood:"majestic" },
+  "Hamsadhwani": { thaat:"Bilawal",  notes:["S","R","G","P","N"],         vadi:"G",  samvadi:"R", aaroh:["S","R","G","P","N","S"], avaroh:["S","N","P","G","R","S"], forbidden:["M","m","d","D","n"], time:"evening", mood:"joyful" },
+  "Malkuns":     { thaat:"Bhairavi", notes:["S","g","M","d","n"],         vadi:"M",  samvadi:"S", aaroh:["S","g","M","d","n","S"], avaroh:["S","n","d","M","g","S"], forbidden:["R","r","G","P","D","N"], time:"night", mood:"meditative" },
+  "Todi":        { thaat:"Todi",     notes:["S","r","g","m","P","d","N"], vadi:"d",  samvadi:"g", aaroh:["S","r","g","m","P","d","N","S"], avaroh:["S","N","d","P","m","g","r","S"], forbidden:[], time:"morning", mood:"intense" }
+};
+
+const THAATS = {
+  "Kalyan":   ["S","R","G","m","P","D","N"],
+  "Bilawal":  ["S","R","G","M","P","D","N"],
+  "Khamaj":   ["S","R","G","M","P","D","n"],
+  "Kafi":     ["S","R","g","M","P","D","n"],
+  "Asavari":  ["S","R","g","M","P","d","n"],
+  "Bhairavi": ["S","r","g","M","P","d","n"],
+  "Bhairav":  ["S","r","G","M","P","d","N"],
+  "Poorvi":   ["S","r","G","m","P","d","N"],
+  "Marwa":    ["S","r","G","m","D","N"],
+  "Todi":     ["S","r","g","m","P","d","N"]
+};
+
+const TIME_ICONS = { morning:"☀️", afternoon:"🌤️", evening:"🌆", night:"🌙", any:"⏱️" };
+const NOTE_TYPE = { "S":"shuddha","R":"shuddha","G":"shuddha","M":"shuddha","P":"shuddha","D":"shuddha","N":"shuddha","r":"komal","g":"komal","d":"komal","n":"komal","m":"teevra" };
+
+let currentRaga = "Yaman";
+let prevRaga = null;
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function jaccard(a, b) {
+  const sa = new Set(a), sb = new Set(b);
+  let inter = 0;
+  for (const x of sa) if (sb.has(x)) inter++;
+  const union = new Set([...sa,...sb]).size;
+  return union === 0 ? 0 : inter / union;
+}
+
+function noteLabel(n) {
+  const map = { S:"Sa",r:"re♭",R:"Re",g:"ga♭",G:"Ga",M:"Ma",m:"Ma#",P:"Pa",d:"dha♭",D:"Dha",n:"ni♭",N:"Ni" };
+  return map[n] || n;
+}
+
+function noteColor(raga, n) {
+  if (n === raga.vadi) return "#e8621a";
+  if (n === raga.samvadi) return "#e8956a";
+  if (raga.notes.includes(n)) return "#f0a832";
+  if (raga.forbidden.includes(n)) return "#c84040";
+  return null;
+}
+
+// ─── BACKGROUND ANIMATION ────────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let t = 0;
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const cx = canvas.width/2, cy = canvas.height/2;
+    for (let i = 1; i <= 8; i++) {
+      const r = i * 80 + Math.sin(t * 0.3 + i * 0.7) * 12;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(240,168,50,${0.03 + 0.01 * Math.sin(t*0.2 + i)})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    t += 0.02;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ─── TOOLTIP ─────────────────────────────────────────────────────────────────
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e, note, role) {
+  document.getElementById('tt-note').textContent = note + " — " + noteLabel(note);
+  document.getElementById('tt-role').textContent = role;
+  tooltip.classList.add('show');
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  tooltip.style.left = (e.clientX + 14) + 'px';
+  tooltip.style.top = (e.clientY - 10) + 'px';
+}
+function hideTooltip() { tooltip.classList.remove('show'); }
+
+// ─── PITCH CIRCLE ────────────────────────────────────────────────────────────
+function drawPitchCircle(svgId, ragaName, size) {
+  const raga = RAGAS[ragaName];
+  const svg = d3.select('#' + svgId);
+  svg.selectAll('*').remove();
+  const S = size || 500;
+  const cx = S/2, cy = S/2, R = S*0.38;
+
+  // Aaroh path lines
+  const aarohColor = "#f0a832", aavarohColor = "#3bb8ac";
+
+  // Draw aaroh arcs
+  const aarohSeq = raga.aaroh.filter(n => ALL_NOTES.includes(n));
+  for (let i = 0; i < aarohSeq.length - 1; i++) {
+    const a = aarohSeq[i], b = aarohSeq[i+1];
+    const ai = ALL_NOTES.indexOf(a), bi = ALL_NOTES.indexOf(b);
+    const ax = cx + R * Math.sin(ai/12*2*Math.PI);
+    const ay = cy - R * Math.cos(ai/12*2*Math.PI);
+    const bx = cx + R * Math.sin(bi/12*2*Math.PI);
+    const by = cy - R * Math.cos(bi/12*2*Math.PI);
+    svg.append('line').attr('x1',ax).attr('y1',ay).attr('x2',bx).attr('y2',by)
+      .attr('stroke',aarohColor).attr('stroke-width',1.5).attr('opacity',0.4);
+  }
+
+  // Draw avaroh arcs
+  const avaroSeq = raga.avaroh.filter(n => ALL_NOTES.includes(n));
+  for (let i = 0; i < avaroSeq.length - 1; i++) {
+    const a = avaroSeq[i], b = avaroSeq[i+1];
+    const ai = ALL_NOTES.indexOf(a), bi = ALL_NOTES.indexOf(b);
+    const ax = cx + R * Math.sin(ai/12*2*Math.PI);
+    const ay = cy - R * Math.cos(ai/12*2*Math.PI);
+    const bx = cx + R * Math.sin(bi/12*2*Math.PI);
+    const by = cy - R * Math.cos(bi/12*2*Math.PI);
+    svg.append('line').attr('x1',ax).attr('y1',ay).attr('x2',bx).attr('y2',by)
+      .attr('stroke',aavarohColor).attr('stroke-width',1.5).attr('stroke-dasharray','5,3').attr('opacity',0.35);
+  }
+
+  // Outer ring
+  svg.append('circle').attr('cx',cx).attr('cy',cy).attr('r',R)
+    .attr('fill','none').attr('stroke','#2e2e3a').attr('stroke-width',1);
+
+  // Note circles
+  ALL_NOTES.forEach((n, i) => {
+    const angle = i/12 * 2*Math.PI;
+    const x = cx + R * Math.sin(angle);
+    const y = cy - R * Math.cos(angle);
+    const isVadi = n === raga.vadi;
+    const isSamvadi = n === raga.samvadi;
+    const isUsed = raga.notes.includes(n);
+    const isForbidden = raga.forbidden.includes(n);
+    const r = isVadi ? (size===360?16:22) : isSamvadi ? (size===360?14:20) : (size===360?12:18);
+
+    let fill = '#1c1c22', stroke = '#3e3e4a', sw = 1.5;
+    if (isVadi) { fill = '#e8621a'; stroke = '#f08040'; sw = 2; }
+    else if (isSamvadi) { fill = '#e8956a'; stroke = '#f0b088'; sw = 2; }
+    else if (isUsed) { fill = 'rgba(240,168,50,0.18)'; stroke = '#f0a832'; sw = 1.5; }
+    else if (isForbidden) { fill = 'rgba(200,64,64,0.15)'; stroke = '#c84040'; sw = 1.5; }
+
+    const g = svg.append('g').style('cursor','pointer');
+    g.append('circle').attr('cx',x).attr('cy',y).attr('r',r)
+      .attr('fill',fill).attr('stroke',stroke).attr('stroke-width',sw);
+
+    if (isForbidden) {
+      const d = r * 0.5;
+      g.append('line').attr('x1',x-d).attr('y1',y-d).attr('x2',x+d).attr('y2',y+d)
+        .attr('stroke','#c84040').attr('stroke-width',1.5);
+      g.append('line').attr('x1',x+d).attr('y1',y-d).attr('x2',x-d).attr('y2',y+d)
+        .attr('stroke','#c84040').attr('stroke-width',1.5);
+    }
+
+    // Label
+    const labelR = R + (size===360 ? 22 : 28);
+    const lx = cx + labelR * Math.sin(angle);
+    const ly = cy - labelR * Math.cos(angle);
+    const textColor = isVadi ? '#e8621a' : isSamvadi ? '#e8956a' : isUsed ? '#f0a832' : isForbidden ? '#c84040' : '#555568';
+    svg.append('text').attr('x',lx).attr('y',ly+4)
+      .attr('text-anchor','middle').attr('font-size',size===360?'10px':'12px')
+      .attr('font-family',"'Crimson Pro', serif").attr('font-weight','700')
+      .attr('fill',textColor).text(n);
+
+    // Hover
+    let role = 'Unused';
+    if (isVadi) role = 'Vadi (most important)';
+    else if (isSamvadi) role = 'Samvadi (second most important)';
+    else if (isUsed) role = 'Used note';
+    else if (isForbidden) role = 'Forbidden (varjit)';
+
+    g.on('mousemove', (e) => showTooltip(e, n, role))
+     .on('mouseleave', hideTooltip);
+  });
+}
+
+// ─── DIRECTED GRAPH ──────────────────────────────────────────────────────────
+function drawGraph(ragaName) {
+  const raga = RAGAS[ragaName];
+  const svg = d3.select('#graph-svg');
+  svg.selectAll('*').remove();
+
+  const W = 700, H = 220;
+
+  // Define arrow markers
+  const defs = svg.append('defs');
+  defs.append('marker').attr('id','arrowA').attr('markerWidth',8).attr('markerHeight',8)
+    .attr('refX',6).attr('refY',3).attr('orient','auto')
+    .append('path').attr('d','M0,0 L0,6 L8,3 z').attr('fill','#f0a832');
+  defs.append('marker').attr('id','arrowAv').attr('markerWidth',8).attr('markerHeight',8)
+    .attr('refX',6).attr('refY',3).attr('orient','auto')
+    .append('path').attr('d','M0,0 L0,6 L8,3 z').attr('fill','#3bb8ac');
+
+  const nodes = [...new Set([...raga.aaroh, ...raga.avaroh])].filter(n => ALL_NOTES.includes(n));
+  // Sort by chromatic order
+  nodes.sort((a,b) => ALL_NOTES.indexOf(a) - ALL_NOTES.indexOf(b));
+  const unique = [...new Set(nodes)];
+
+  const margin = 60;
+  const step = unique.length > 1 ? (W - margin*2) / (unique.length - 1) : 0;
+  const pos = {};
+  unique.forEach((n, i) => { pos[n] = { x: margin + i * step, y: H/2 }; });
+
+  // Build edges
+  const aarohEdges = [];
+  const aarohSeq = raga.aaroh.filter(n => ALL_NOTES.includes(n));
+  for (let i = 0; i < aarohSeq.length-1; i++) {
+    aarohEdges.push([aarohSeq[i], aarohSeq[i+1]]);
+  }
+  const avaroEdges = [];
+  const avaroSeq = raga.avaroh.filter(n => ALL_NOTES.includes(n));
+  for (let i = 0; i < avaroSeq.length-1; i++) {
+    avaroEdges.push([avaroSeq[i], avaroSeq[i+1]]);
+  }
+
+  function drawEdge(a, b, color, dashed, yOff) {
+    if (!pos[a] || !pos[b]) return;
+    const x1 = pos[a].x, x2 = pos[b].x;
+    const y1 = H/2 + yOff, y2 = H/2 + yOff;
+    const mid = (x1+x2)/2;
+    const curve = yOff === 0 ? -30 : 30;
+    const path = `M${x1},${y1} Q${mid},${y1+curve} ${x2},${y2}`;
+    svg.append('path').attr('d',path).attr('fill','none')
+      .attr('stroke',color).attr('stroke-width',2)
+      .attr('stroke-dasharray', dashed ? '6,4' : 'none')
+      .attr('marker-end', dashed ? 'url(#arrowAv)' : 'url(#arrowA)')
+      .attr('opacity',0.75);
+  }
+
+  aarohEdges.forEach(([a,b]) => drawEdge(a, b, '#f0a832', false, -18));
+  avaroEdges.forEach(([a,b]) => drawEdge(a, b, '#3bb8ac', true, 18));
+
+  // Node circles
+  unique.forEach(n => {
+    const {x, y} = pos[n];
+    const isVadi = n === raga.vadi;
+    const isSamvadi = n === raga.samvadi;
+    const r = isVadi ? 24 : isSamvadi ? 20 : 16;
+    let fill = 'rgba(240,168,50,0.12)', stroke = '#f0a832', sw = 1.5;
+    if (isVadi) { fill = '#e8621a'; stroke = '#f08040'; sw = 2; }
+    else if (isSamvadi) { fill = 'rgba(232,149,106,0.3)'; stroke = '#e8956a'; sw = 2; }
+
+    const g = svg.append('g').style('cursor','pointer');
+    g.append('circle').attr('cx',x).attr('cy',y).attr('r',r)
+      .attr('fill',fill).attr('stroke',stroke).attr('stroke-width',sw);
+    g.append('text').attr('x',x).attr('y',y+5)
+      .attr('text-anchor','middle').attr('font-size','14px')
+      .attr('font-family',"'Crimson Pro', serif").attr('font-weight','700')
+      .attr('fill', isVadi ? '#fff' : isSamvadi ? '#fff' : '#f0a832').text(n);
+
+    // Aaroh / avaroh labels below/above
+    svg.append('text').attr('x',x).attr('y', y + r + 14)
+      .attr('text-anchor','middle').attr('font-size','9px').attr('fill','#555568').text('—');
+  });
+
+  // Y labels
+  svg.append('text').attr('x',8).attr('y',H/2-18+4).attr('font-size','9px').attr('fill','#f0a832').attr('opacity',0.7).text('aaroh');
+  svg.append('text').attr('x',8).attr('y',H/2+18+4).attr('font-size','9px').attr('fill','#3bb8ac').attr('opacity',0.7).text('avaroh');
+}
+
+// ─── META CARD ───────────────────────────────────────────────────────────────
+function renderMeta(ragaName) {
+  const raga = RAGAS[ragaName];
+  const card = document.getElementById('meta-card');
+
+  // Similarity
+  let simHTML = '';
+  if (prevRaga && prevRaga !== ragaName) {
+    const sim = jaccard(RAGAS[prevRaga].notes, raga.notes);
+    const pct = Math.round(sim * 100);
+    simHTML = `
+      <div class="similarity-bar-wrap">
+        <div class="similarity-label">Similarity to ${prevRaga}</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="sim-pct">${pct}% Jaccard similarity</div>
+      </div>`;
+  }
+
+  // Note pills
+  const pillsHTML = ALL_NOTES.map(n => {
+    if (n === raga.vadi) return `<span class="note-pill pill-vadi">${n} ★</span>`;
+    if (n === raga.samvadi) return `<span class="note-pill pill-samvadi">${n} ◆</span>`;
+    if (raga.notes.includes(n)) return `<span class="note-pill pill-used">${n}</span>`;
+    return `<span class="note-pill pill-unused">${n}</span>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="raga-name-display">${ragaName}</div>
+    <div class="thaat-badge">${raga.thaat} thaat</div>
+    <div class="note-pills">${pillsHTML}</div>
+    <div style="margin-top:16px">
+      <div class="meta-row"><span class="meta-label">Vadi</span><span class="meta-value"><span class="vadi-dot"></span>${raga.vadi} (${noteLabel(raga.vadi)})</span></div>
+      <div class="meta-row"><span class="meta-label">Samvadi</span><span class="meta-value"><span class="samvadi-dot"></span>${raga.samvadi} (${noteLabel(raga.samvadi)})</span></div>
+      <div class="meta-row"><span class="meta-label">Time</span><span class="meta-value">${TIME_ICONS[raga.time] || ''} ${raga.time}</span></div>
+      <div class="meta-row"><span class="meta-label">Mood / Rasa</span><span class="meta-value">${raga.mood}</span></div>
+      <div class="meta-row"><span class="meta-label">Notes</span><span class="meta-value">${raga.notes.length} of 12</span></div>
+      ${raga.forbidden.length > 0 ? `<div class="meta-row"><span class="meta-label">Forbidden</span><span class="meta-value" style="color:var(--red)">${raga.forbidden.join(', ')}</span></div>` : ''}
+    </div>
+    ${simHTML}
+  `;
+}
+
+// ─── EXPLORER ────────────────────────────────────────────────────────────────
+function selectRaga(name) {
+  prevRaga = currentRaga;
+  currentRaga = name;
+  drawPitchCircle('circle-svg', name, 500);
+  drawGraph(name);
+  renderMeta(name);
+}
+
+// ─── COMPARE ─────────────────────────────────────────────────────────────────
+function renderCompare() {
+  const a = document.getElementById('compare-a').value;
+  const b = document.getElementById('compare-b').value;
+  drawPitchCircle('circle-a', a, 360);
+  drawPitchCircle('circle-b', b, 360);
+  drawVenn(a, b);
+}
+
+function drawVenn(nameA, nameB) {
+  const ra = RAGAS[nameA], rb = RAGAS[nameB];
+  const setA = new Set(ra.notes), setB = new Set(rb.notes);
+  const onlyA = ra.notes.filter(n => !setB.has(n));
+  const onlyB = rb.notes.filter(n => !setA.has(n));
+  const both = ra.notes.filter(n => setB.has(n));
+  const sim = jaccard(ra.notes, rb.notes);
+  const pct = Math.round(sim * 100);
+
+  const svg = d3.select('#venn-svg');
+  svg.selectAll('*').remove();
+  const W = 700, H = 220;
+
+  // Ellipses
+  const ex = W*0.28, ey = H*0.5, ew = W*0.22, eh = H*0.38;
+  const bx = W*0.72;
+
+  svg.append('ellipse').attr('cx',ex).attr('cy',ey).attr('rx',ew).attr('ry',eh)
+    .attr('fill','rgba(240,168,50,0.07)').attr('stroke','#f0a832').attr('stroke-width',1.5).attr('opacity',0.8);
+  svg.append('ellipse').attr('cx',bx).attr('cy',ey).attr('rx',ew).attr('ry',eh)
+    .attr('fill','rgba(59,184,172,0.07)').attr('stroke','#3bb8ac').attr('stroke-width',1.5).attr('opacity',0.8);
+
+  // Labels for raga names
+  svg.append('text').attr('x',ex - ew*0.5).attr('y',25).attr('text-anchor','middle')
+    .attr('font-size','13px').attr('font-family',"'Crimson Pro', serif").attr('font-weight','700').attr('fill','#f0a832').text(nameA);
+  svg.append('text').attr('x',bx + ew*0.5).attr('y',25).attr('text-anchor','middle')
+    .attr('font-size','13px').attr('font-family',"'Crimson Pro', serif").attr('font-weight','700').attr('fill','#3bb8ac').text(nameB);
+
+  // Note text — only A
+  const colA = ex - ew * 0.65;
+  onlyA.forEach((n, i) => {
+    svg.append('text').attr('x',colA).attr('y', H*0.35 + i*18)
+      .attr('text-anchor','middle').attr('font-size','13px')
+      .attr('font-family',"'Crimson Pro', serif").attr('font-weight','700').attr('fill','#f0a832').text(n);
+  });
+
+  // Both
+  both.forEach((n, i) => {
+    svg.append('text').attr('x',W/2).attr('y', H*0.35 + i*18)
+      .attr('text-anchor','middle').attr('font-size','13px')
+      .attr('font-family',"'Crimson Pro', serif").attr('font-weight','700').attr('fill','#e8c86a').text(n);
+  });
+
+  // Only B
+  const colB = bx + ew * 0.65;
+  onlyB.forEach((n, i) => {
+    svg.append('text').attr('x',colB).attr('y', H*0.35 + i*18)
+      .attr('text-anchor','middle').attr('font-size','13px')
+      .attr('font-family',"'Crimson Pro', serif").attr('font-weight','700').attr('fill','#3bb8ac').text(n);
+  });
+
+  // Stats
+  document.getElementById('venn-stats').innerHTML = `
+    <div class="venn-stat">
+      <div class="venn-stat-label">Shared Notes</div>
+      <div class="venn-stat-value">${both.length}</div>
+      <div class="venn-stat-sub">${both.join(', ') || 'none'}</div>
+    </div>
+    <div class="venn-stat">
+      <div class="venn-stat-label">Jaccard Similarity</div>
+      <div class="venn-stat-value">${pct}%</div>
+      <div class="venn-stat-sub">${both.length} / ${new Set([...ra.notes,...rb.notes]).size} notes in common</div>
+    </div>
+    <div class="venn-stat">
+      <div class="venn-stat-label">${nameA} only</div>
+      <div class="venn-stat-value">${onlyA.length}</div>
+      <div class="venn-stat-sub">${onlyA.join(', ') || 'none'}</div>
+    </div>
+    <div class="venn-stat">
+      <div class="venn-stat-label">${nameB} only</div>
+      <div class="venn-stat-value">${onlyB.length}</div>
+      <div class="venn-stat-sub">${onlyB.join(', ') || 'none'}</div>
+    </div>
+  `;
+
+  // Interpretation
+  let interp = '';
+  if (pct >= 70) {
+    interp = `${nameA} and ${nameB} share ${both.length} of their combined ${new Set([...ra.notes,...rb.notes]).size} notes — a ${pct}% similarity. They belong to closely related tonal spaces. ${nameA} ${onlyA.length>0?'adds '+onlyA.join(', '):'uses no exclusive notes'}; ${nameB} ${onlyB.length>0?'adds '+onlyB.join(', '):'uses no exclusive notes'}. This explains why listeners often experience a family resemblance between these ragas.`;
+  } else if (pct >= 40) {
+    interp = `${nameA} and ${nameB} overlap moderately — ${both.length} shared notes at ${pct}% Jaccard. They draw from overlapping but distinct tonal palettes, giving them some common melodic phrases yet distinctly different characters.`;
+  } else {
+    interp = `${nameA} and ${nameB} have very different tonal vocabularies — only ${both.length} shared note(s) at ${pct}% Jaccard. These ragas inhabit separate emotional and musical worlds despite sharing the same fundamental pitch system.`;
+  }
+  document.getElementById('venn-interp').textContent = interp;
+}
+
+// ─── THAAT MAP ───────────────────────────────────────────────────────────────
+function renderThaatMap() {
+  const grid = document.getElementById('thaat-grid');
+  const thaatNames = Object.keys(THAATS);
+
+  // Count ragas per thaat
+  const ragaCount = {};
+  thaatNames.forEach(t => ragaCount[t] = 0);
+  Object.values(RAGAS).forEach(r => { if (ragaCount[r.thaat] !== undefined) ragaCount[r.thaat]++; });
+
+  grid.innerHTML = thaatNames.map(t => {
+    const notes = THAATS[t];
+    const pillsHTML = notes.map(n => {
+      const type = NOTE_TYPE[n] || 'shuddha';
+      return `<span class="thaat-note-pill tn-${type}">${n}</span>`;
+    }).join('');
+    return `<div class="thaat-card">
+      <div class="thaat-card-header">
+        <span class="thaat-card-name">${t}</span>
+        <span class="raga-count-badge">${ragaCount[t] || 0} raga${ragaCount[t]===1?'':'s'}</span>
+      </div>
+      <div class="thaat-notes">${pillsHTML}</div>
+    </div>`;
+  }).join('');
+
+  // Heatmap
+  drawHeatmap(thaatNames);
+}
+
+function drawHeatmap(names) {
+  const svg = d3.select('#heatmap-svg');
+  svg.selectAll('*').remove();
+  const n = names.length;
+  const margin = 100, cell = 46;
+  const W = margin + n * cell + 20;
+  const H = margin + n * cell + 20;
+  svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+  // Precompute
+  const sim = [];
+  for (let i = 0; i < n; i++) {
+    sim[i] = [];
+    for (let j = 0; j < n; j++) {
+      sim[i][j] = jaccard(THAATS[names[i]], THAATS[names[j]]);
+    }
+  }
+
+  const colorScale = d3.scaleSequential().domain([0,1])
+    .interpolator(t => d3.interpolateRgb('#1c1c22', '#f0a832')(t));
+
+  // Col labels
+  names.forEach((name, j) => {
+    svg.append('text').attr('x', margin + j*cell + cell/2).attr('y', margin - 6)
+      .attr('text-anchor','end').attr('font-size','10px').attr('fill','#888')
+      .attr('transform', `rotate(-40, ${margin + j*cell + cell/2}, ${margin-6})`).text(name);
+  });
+  // Row labels
+  names.forEach((name, i) => {
+    svg.append('text').attr('x', margin - 6).attr('y', margin + i*cell + cell/2 + 4)
+      .attr('text-anchor','end').attr('font-size','10px').attr('fill','#888').text(name);
+  });
+
+  // Cells
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const s = sim[i][j];
+      const g = svg.append('g');
+      g.append('rect')
+        .attr('x', margin + j*cell + 1).attr('y', margin + i*cell + 1)
+        .attr('width', cell-2).attr('height', cell-2)
+        .attr('fill', colorScale(s)).attr('rx', 3)
+        .style('cursor', 'pointer');
+
+      g.append('text')
+        .attr('x', margin + j*cell + cell/2).attr('y', margin + i*cell + cell/2 + 4)
+        .attr('text-anchor','middle').attr('font-size','9px')
+        .attr('fill', s > 0.6 ? '#1a1a1a' : '#aaa').text(Math.round(s*100));
+
+      g.on('mousemove', (e) => {
+        const shared = THAATS[names[i]].filter(x => THAATS[names[j]].includes(x));
+        showTooltip(e, `${names[i]} ∩ ${names[j]}`, `${Math.round(s*100)}% similarity — shared: ${shared.join(', ')}`);
+      }).on('mouseleave', hideTooltip);
+    }
+  }
+}
+
+// ─── VIEW SWITCHING ──────────────────────────────────────────────────────────
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  event.target.classList.add('active');
+
+  if (name === 'compare') renderCompare();
+  if (name === 'thaat') renderThaatMap();
+}
+
+function toggleMath() {
+  const body = document.getElementById('math-body');
+  const arrow = document.getElementById('math-arrow');
+  body.classList.toggle('open');
+  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+selectRaga('Yaman');
+</script>
+</body>
+</html>
