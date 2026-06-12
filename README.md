@@ -1,15 +1,330 @@
 # 🎵 Interactive Raga Visualizer
 
-> An interactive web application that explores Indian classical ragas through graph theory, set theory, and real-time visualization.
+### Graph-Theoretic and Set-Theoretic Exploration of Hindustani Classical Ragas
 
+> An interactive web application that models Hindustani classical ragas as mathematical structures using pitch-class sets, directed graphs, similarity metrics, and data visualization.
 
-## 🌟 Project Overview
+---
 
-Indian classical ragas are traditionally understood through their melodic patterns, emotional character, and performance practices. This project approaches ragas from a computational and mathematical perspective.
+## 🌟 Overview
 
-**Interactive Raga Visualizer** models ragas as mathematical structures and presents them through an intuitive visual interface. By combining concepts from **Graph Theory**, **Set Theory**, **Music Theory**, and **Interactive Data Visualization**, the project enables users to explore how ragas are constructed and how they relate to one another.
+**Interactive Raga Visualizer** is a computational musicology project that explores the relationship between Indian classical music and mathematics.
 
-The application transforms abstract musical concepts into dynamic visual representations that can be explored, compared, and analyzed interactively.
+The application represents Hindustani ragas as **pitch-class sets**, **directed graphs**, and **visual networks**, allowing users to examine their structure through the lens of graph theory and set theory. Rather than viewing a raga solely as a musical scale, the project treats it as a mathematical object whose properties can be visualized, compared, and analyzed interactively.
+
+Built entirely with **HTML, CSS, JavaScript, and D3.js**, the project runs directly in the browser without requiring a backend or external database.
+
+---
+
+## 🎯 Objectives
+
+This project aims to:
+
+* Visualize ragas as mathematical structures
+* Demonstrate applications of graph theory in music
+* Explore set-theoretic relationships between ragas
+* Provide an educational tool for learning Hindustani music theory
+* Bridge the fields of music, mathematics, and computer science
+
+---
+
+# ✨ Features
+
+## 🎼 Raga Explorer
+
+Explore individual ragas through interactive visual representations.
+
+### Circular Pitch-Class Diagram
+
+Every raga is displayed on a circular arrangement of the twelve pitch classes:
+
+```text
+S • r • R • g • G • M • m • P • d • D • n • N
+```
+
+Features include:
+
+* Highlighted notes belonging to the selected raga
+* Special emphasis on Vadi and Samvadi swaras
+* Visualization of forbidden notes
+* Interactive tooltips
+* Ascending (Aaroh) and descending (Avaroh) pathways
+* Optional note playback using Tone.js
+
+This representation emphasizes octave equivalence while making note relationships immediately visible.
+
+---
+
+### Directed Note Graph
+
+Each raga is also represented as a directed graph.
+
+#### Graph Components
+
+* **Nodes** represent swaras (notes)
+* **Edges** represent melodic transitions
+* **Directed arrows** show movement between notes
+* **Highlighted nodes** indicate Vadi and Samvadi
+
+The graph reveals structural patterns that are difficult to observe in traditional notation.
+
+---
+
+### Metadata Dashboard
+
+For every raga, the application displays:
+
+* Parent Thaat
+* Vadi and Samvadi
+* Time of performance
+* Emotional mood (*Rasa*)
+* Number of notes used
+* Similarity score relative to the previously viewed raga
+
+---
+
+## 🔍 Raga Comparison
+
+Compare two ragas side-by-side using mathematical operations.
+
+### Set-Theoretic Analysis
+
+Each raga is represented as a subset of the universal pitch-class set:
+
+```text
+U = {S, r, R, g, G, M, m, P, d, D, n, N}
+```
+
+The comparison view computes:
+
+### ∩ Intersection
+
+Notes shared by both ragas.
+
+### ∪ Union
+
+Combined note collection of both ragas.
+
+### − Difference
+
+Notes unique to each raga.
+
+### Similarity Score
+
+Similarity is measured using the **Jaccard Index**:
+
+```text
+J(A,B) = |A ∩ B| / |A ∪ B|
+```
+
+where:
+
+* A = note set of Raga A
+* B = note set of Raga B
+
+The result provides a quantitative measure of how closely related two ragas are.
+
+---
+
+### Interactive Venn Diagram
+
+The comparison interface includes a Venn-style visualization displaying:
+
+* Notes unique to Raga A
+* Notes unique to Raga B
+* Shared notes between both ragas
+
+Alongside numerical metrics and explanatory interpretations.
+
+---
+
+## 🌐 Thaat Map
+
+Explore the foundational framework of Hindustani classical music through the ten canonical thaats.
+
+### Included Thaats
+
+* Kalyan
+* Bilawal
+* Khamaj
+* Kafi
+* Asavari
+* Bhairavi
+* Bhairav
+* Poorvi
+* Marwa
+* Todi
+
+Each thaat card displays:
+
+* Constituent notes
+* Komal swaras
+* Shuddha swaras
+* Teevra swaras
+* Number of associated ragas in the dataset
+
+---
+
+### Similarity Heatmap
+
+A full similarity matrix compares every thaat against every other thaat.
+
+Features:
+
+* Color-coded similarity scores
+* Hover tooltips
+* Shared-note analysis
+* Visual identification of related thaats
+
+This provides a high-level view of the structural relationships within the Hindustani music system.
+
+---
+
+# 🧠 Mathematical Foundation
+
+The project combines several mathematical ideas.
+
+## Set Theory
+
+A raga is modeled as a subset of the universal note collection.
+
+Example:
+
+```text
+Yaman = {S, R, G, m, P, D, N}
+```
+
+Operations such as intersection, union, and difference enable rigorous comparison between ragas.
+
+---
+
+## Graph Theory
+
+A raga can also be interpreted as a graph:
+
+* Vertices → Notes
+* Edges → Melodic transitions
+* Degree → Connectivity
+* Centrality → Relative importance of notes
+
+The concept of **Vadi** naturally aligns with graph centrality, as it often functions as a structurally significant node within the musical network.
+
+---
+
+## Similarity Metrics
+
+The application uses the Jaccard Index to quantify overlap between note sets.
+
+This allows subjective musical similarity to be supplemented with objective mathematical analysis.
+
+---
+
+# 📚 Dataset
+
+The project includes representative ragas from major Hindustani traditions:
+
+* Yaman
+* Bhairav
+* Kafi
+* Bhupali
+* Bhairavi
+* Bageshri
+* Darbari
+* Hamsadhwani
+* Malkuns
+* Todi
+
+Each raga contains:
+
+* Parent Thaat
+* Note collection
+* Aaroh
+* Avaroh
+* Vadi
+* Samvadi
+* Performance time
+* Mood descriptor
+* Forbidden notes
+
+All data is stored directly within the application.
+
+---
+
+# 🛠️ Technology Stack
+
+### Frontend
+
+* HTML5
+* CSS3
+* Vanilla JavaScript
+
+### Visualization
+
+* D3.js v7
+* SVG Rendering
+* Interactive Graph Layouts
+
+### Audio
+
+* Tone.js (Optional)
+
+### Concepts
+
+* Graph Theory
+* Set Theory
+* Data Visualization
+* Computational Musicology
+
+---
+
+# 🚀 Future Improvements
+
+Planned enhancements include:
+
+* Additional ragas and thaats
+* Graph centrality analytics
+* Community detection and clustering
+* Interactive melodic phrase visualization
+* MIDI support
+* Raga recommendation engine
+* Exportable graph datasets
+* Machine-learning-based similarity analysis
+
+---
+
+# 🎓 Educational Value
+
+This project demonstrates how computational methods can be applied to artistic and cultural systems.
+
+It serves as:
+
+* A music education tool
+* A graph theory visualization project
+* A set theory application
+* A computational musicology experiment
+* A data visualization case study
+
+---
+
+# 👨‍💻 Author
+
+## Tanay Pant
+
+🎓 Computer Science Enthusiast
+
+🎤 Vocalist
+
+🎼 Passionate about Hindustani Classical Music
+
+📊 Interested in Graph Theory, Set Theory, Data Visualization, and Computational Musicology
+
+💻 Building projects at the intersection of Music, Mathematics, and Technology
+
+---
+
+# 📄 License
+
+This project is licensed under the MIT License.
 
 ---
 
