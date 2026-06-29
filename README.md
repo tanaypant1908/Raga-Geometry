@@ -1,4 +1,4 @@
-# 🎵 Interactive Raga Visualizer
+# 🎵 Raga Geometry: Interactive Raga Visualizer
 
 ### Visualizing Hindustani Classical Ragas Through Graph Theory and Set Theory
 
