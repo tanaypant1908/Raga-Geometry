@@ -5,7 +5,7 @@
 An interactive single-file web application that explores Hindustani classical ragas using mathematical and visual representations. The project models ragas as pitch-class sets and directed graphs, enabling users to study their structure, compare note collections, and examine relationships between thaats through interactive visualizations.
 
 ---
-
+ 
 ## 📖 Overview
 
 Indian classical ragas are traditionally understood through their swaras, melodic movements, and performance practices. This project presents an alternative perspective by representing ragas as mathematical structures that can be visualized and analyzed.
